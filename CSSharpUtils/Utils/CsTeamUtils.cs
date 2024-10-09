@@ -1,4 +1,5 @@
 ﻿using CounterStrikeSharp.API;
+using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace CSSharpUtils.Utils;
@@ -58,5 +59,25 @@ public static class CsTeamUtils
             CsTeam.CounterTerrorist => ChatColors.LightBlue,
             _ => ChatColors.Default
         };
+    }
+
+    public static void GetTeamScore(out int tscore, out int ctscore)
+    {
+        tscore = 0;
+        ctscore = 0;
+
+        var csteammanager = Utilities.FindAllEntitiesByDesignerName<CCSTeam>("cs_team_manager").ToList();
+
+        if (csteammanager.Count > 0)
+        {
+            foreach (CCSTeam team in csteammanager)
+            {
+                switch (team.TeamNum)
+                {
+                    case 2: tscore = team.Score; break;
+                    case 3: ctscore = team.Score; break;
+                }
+            }
+        }
     }
 }

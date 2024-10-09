@@ -12,7 +12,7 @@ public static class ChatUtils
     /// <summary>
     /// Represents a new line character for chat messages.
     /// </summary>
-    public static char NewLine = '\u2029';
+    public static readonly char NewLine = '\u2029';
 
     /// <summary>
     /// A dictionary mapping predefined color names to their corresponding character codes.

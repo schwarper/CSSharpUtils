@@ -34,23 +34,6 @@ public static class PlayerControllerExtensions
 
         playerController!.PlayerPawn.Value!.Unfreeze();
     }
-    
-    /// <summary>
-    /// Kicks the player from the server with a specified reason.
-    /// </summary>
-    /// <param name="playerController">The player controller to kick.</param>
-    /// <param name="reason">The reason for kicking the player.</param>
-    public static void Kick(this CCSPlayerController? playerController, string reason)
-    {
-        if (!playerController.IsPlayer())
-            return;
-
-        var kickCommand = string.Create(CultureInfo.InvariantCulture,
-            $"kickid {playerController!.UserId!.Value} \"{reason}\"");
-
-        // Queue for next frame to avoid threading issues
-        Server.NextFrame(() => { Server.ExecuteCommand(kickCommand); });
-    }
 
     /// <summary>
     /// Renames the player with a specified name and clan tag (optional).
@@ -200,7 +183,10 @@ public static class PlayerControllerExtensions
     /// <returns><c>true</c> if the player is valid; otherwise, <c>false</c>.</returns>
     public static bool IsPlayer(this CCSPlayerController? player)
     {
-        return player is
-            { PlayerPawn.Value: not null, IsValid: true, IsHLTV: false, IsBot: false, UserId: not null, SteamID: > 0, Connected: PlayerConnectedState.PlayerConnected };
+        return
+            player?.IsValid == true &&
+            !player.IsBot &&
+            SteamIDExtensions.IsSteamID(player.SteamID) &&
+            player.Connected == PlayerConnectedState.PlayerConnected;
     }
 }

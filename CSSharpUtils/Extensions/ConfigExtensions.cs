@@ -11,11 +11,11 @@ namespace CSSharpUtils.Extensions;
 public static class ConfigExtensions
 {
     // Holds the name of the executing assembly, used in constructing the configuration file path.
-    private static readonly string AssemblyName = Assembly.GetExecutingAssembly().GetName().Name ?? "";
+    private static readonly string AssemblyName = Assembly.GetExecutingAssembly().GetName().Name ?? string.Empty;
 
     // Defines the path to the configuration file, based on the game directory and assembly name.
     public static readonly string ConfigPath =
-        $"{Server.GameDirectory}/csgo/addons/counterstrikesharp/configs/plugins/{AssemblyName}/{AssemblyName}.json";
+        Path.Combine(Server.GameDirectory, "csgo", "addons", "counterstrikesharp", "plugins", AssemblyName, $"{AssemblyName}.json");
 
     // Specifies the options for JSON serialization, including indentation for readability.
     private static readonly JsonSerializerOptions WriteSerializerOptions = new() { WriteIndented = true };
@@ -23,7 +23,6 @@ public static class ConfigExtensions
     // Specifies the options for JSON deserialization.
     private static readonly JsonSerializerOptions ReadSerializerOptions = new() { ReadCommentHandling = JsonCommentHandling.Skip };
     
-
     /// <summary>
     /// Updates the version of the provided configuration object and serializes it back to JSON.
     /// This method ensures that the configuration file reflects the most recent version,
