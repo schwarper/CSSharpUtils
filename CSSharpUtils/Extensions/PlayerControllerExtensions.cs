@@ -1,7 +1,9 @@
-﻿using System.Globalization;
+﻿using System.Drawing;
+using System.Globalization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Admin;
+using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace CSSharpUtils.Extensions;
@@ -11,6 +13,13 @@ namespace CSSharpUtils.Extensions;
 /// </summary>
 public static class PlayerControllerExtensions
 {
+    public enum FadeFlags
+    {
+        FADE_IN,
+        FADE_OUT,
+        FADE_STAYOUT
+    }
+
     /// <summary>
     /// Freezes the player, preventing them from moving.
     /// </summary>
@@ -174,6 +183,70 @@ public static class PlayerControllerExtensions
     public static bool HasPermission(this CCSPlayerController? playerController, string permission)
     {
         return playerController.IsPlayer() && AdminManager.PlayerHasPermissions(playerController, permission);
+    }
+
+    // code author is B3none
+    public static void SetClientKills(this CCSPlayerController player, int kills)
+    {
+        if (player.ActionTrackingServices == null)
+        {
+            return;
+        }
+
+        player.ActionTrackingServices.NumRoundKills = kills;
+        Utilities.SetStateChanged(player, "CCSPlayerController_ActionTrackingServices", "m_iNumRoundKills");
+        Utilities.SetStateChanged(player, "CCSPlayerController", "m_pActionTrackingServices");
+    }
+
+    public static void ColorScreen(this CCSPlayerController player, Color color, float hold = 0.1f, float fade = 0.2f, FadeFlags flags = FadeFlags.FADE_IN, bool withPurge = true)
+    {
+        var fadeMsg = UserMessage.FromId(106);
+
+        fadeMsg.SetInt("duration", Convert.ToInt32(fade * 512));
+        fadeMsg.SetInt("hold_time", Convert.ToInt32(hold * 512));
+
+        var flag = flags switch
+        {
+            FadeFlags.FADE_IN => 0x0001,
+            FadeFlags.FADE_OUT => 0x0002,
+            FadeFlags.FADE_STAYOUT => 0x0008,
+            _ => 0x0001
+        };
+
+        if (withPurge)
+            flag |= 0x0010;
+
+        fadeMsg.SetInt("flags", flag);
+        fadeMsg.SetInt("color", color.R | color.G << 8 | color.B << 16 | color.A << 24);
+        fadeMsg.Send(player);
+    }
+
+    [Obsolete("Kick is deprecated as it is no longer needed. Use player.Disconnect. This method will be removed in a future update.", false)]
+    /// <summary>
+    /// Kicks the player from the server with a specified reason.
+    /// </summary>
+    /// <param name="playerController">The player controller to kick.</param>
+    /// <param name="reason">The reason for kicking the player.</param>
+    public static void Kick(this CCSPlayerController? playerController, string reason)
+    {
+        if (!playerController.IsPlayer())
+            return;
+        var kickCommand = string.Create(CultureInfo.InvariantCulture,
+            $"kickid {playerController!.UserId!.Value} \"{reason}\"");
+        // Queue for next frame to avoid threading issues
+        Server.NextFrame(() => { Server.ExecuteCommand(kickCommand); });
+    }
+
+    // Author is Mesharsky
+    public static void SetPlayerModelSize(this CCSPlayerController client, float value)
+    {
+        var playerPawnValue = client.PlayerPawn.Value;
+
+        if (playerPawnValue == null)
+            return;
+
+        playerPawnValue.CBodyComponent!.SceneNode!.Scale = value;
+        Utilities.SetStateChanged(playerPawnValue, "CBaseEntity", "m_CBodyComponent");
     }
 
     /// <summary>
